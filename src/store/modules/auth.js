@@ -61,6 +61,15 @@ export default {
       if(state.user)
         localStorage.setItem(state.userKey, JSON.stringify(state.user));
     },
+    clearUser({state, commit}) {
+      state.user = {
+          email: null,
+          firstName: null,
+          lastName: null,
+          phoneNumber: null,
+      }
+      localStorage.setItem(state.userKey, JSON.stringify(state.user));
+    }
 
   },
 
@@ -116,12 +125,7 @@ export default {
 
     async logout({commit, state}) {
       commit('updateToken', '')
-      commit('updateUser', {
-          email: null,
-          firstName: null,
-          lastName: null,
-          phoneNumber: null,
-      })
+      commit('clearUser')
       await router.push('/')
     }
 

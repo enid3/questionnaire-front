@@ -22,7 +22,7 @@ function generateOptionsHolder(options) {
 export default {
   name: "BFormCheckboxGroup",
   props: {
-    modelValue: Array,
+    modelValue: String,
     options: Array
   },
   data() {
@@ -32,9 +32,10 @@ export default {
   },
   methods: {
     update() {
+      let newVaue = ''
       this.$emit(
           'update:modelValue',
-          Object.keys(this.valuesHolder).filter(key => this.valuesHolder[key]))
+          Object.keys(this.valuesHolder).filter(key => this.valuesHolder[key]).join(' '))
     }
   },
   components: { BFormCheckbox },
