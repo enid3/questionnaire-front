@@ -9,7 +9,10 @@
 <script>
 export default {
   props: {
-    modelValue: Array,
+    modelValue: {
+      type: Array,
+      required: true
+    },
   },
   computed: {
     options: {

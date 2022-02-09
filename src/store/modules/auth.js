@@ -85,17 +85,19 @@ export default {
       commit('updateUser', json['user'])
     },
     async register({commit, getters}, user) {
-      console.log(user)
       const resp = await fetch(
         getters.apiUrl('/auth/register'),
         getters.fetchInit('post', user)
       )
-      console.log(resp)
-      const json = await resp.json()
+      if(resp.ok){
+        const json = await resp.json()
 
-      commit('updateToken', json.token)
-      console.log(json['user'])
-      commit('updateUser', json['user'])
+        commit('updateToken', json.token)
+        commit('updateUser', json['user'])
+        return true
+      } else {
+        return false
+      }
     },
     async editProfile({commit, getters, state}, user){
       const resp = await fetch(

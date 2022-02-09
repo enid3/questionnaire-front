@@ -6,7 +6,7 @@
         <div class="col-auto"><h3>Fields</h3></div>
         <div class="col-auto ms-auto">
           <div class="btn btn-primary"
-               @click="saveModalTitle='Add field'; editedField = {label: '', type: '', options: [], isRequired: true, isActive: true}"
+               @click="saveModalTitle='Add field'; initialField = {label: '', type: '', options: [], isRequired: true, isActive: true}; editedId=-1;"
                data-bs-toggle="modal" data-bs-target="#saveFieldModal" >
             <i class="bi bi-plus"></i> Add field
           </div>
@@ -18,6 +18,7 @@
       <DataTable
           :fields="tableFields"
           :items="fieldsArray"
+          :busy="!isTableReady"
       >
         <template #cell(type)="data">
                                   {{ fieldTypes[data.value] }}
@@ -25,7 +26,7 @@
         <template #cell(modify)="data">
           <div class="justify-content-end row">
             <button
-                @click="saveModalTitle='Edit'; editedField=data.item"
+                @click="saveModalTitle='Edit'; initialField=data.item; editedId=data.item.id;"
                 class="btn col-auto p-1"
                 data-bs-toggle="modal"
                 data-bs-target="#saveFieldModal"
@@ -62,16 +63,10 @@
           </div>
           <div class="modal-body">
             <ManageFieldForm
-              v-model:label="editedField.label"
-              v-model:type="editedField.type"
-              v-model:options="editedField.options"
-              v-model:isRequired="editedField.isRequired"
-              v-model:isActive="editedField.isActive"
-            />
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button @click="saveField(this.editedField)" data-bs-dismiss="modal" type="button" class="btn btn-primary">Save</button>
+                @submit="addField"
+                :editedId="editedId"
+                :initialValues="initialField"
+                />
           </div>
         </div>
       </div>
@@ -84,7 +79,7 @@ import DeleteFieldButton from "@/components/field/DeleteFieldButton";
 import fieldTypes from "@/FieldTypes";
 import DataTable from "@/components/DataTable";
 import PaginationFooter from "@/components/PaginationFooter";
-import ManageFieldForm from "@/components/ManageFieldForm";
+import ManageFieldForm from "@/components/form/ManageFieldForm";
 import TablePageLayout from "@/components/layouts/TablePageLayout";
 
 
@@ -95,12 +90,16 @@ export default {
     return {
       fieldTypes,
 
+      isTableReady: false,
       currentPage: 0,
-      pageSize: 0,
+      pageSize: 10,
 
       totalElements: 0,
       elementsOnPage: 0,
       totalPages: 0,
+
+      initialField: {label: "label", type: "", options: [], isRequired: true, isActive: true},
+      editedId: undefined,
 
       tableFields: [
         { key: 'label', label: 'Label' },
@@ -112,8 +111,6 @@ export default {
     fieldsArray: [],
 
         saveModalTitle: "",
-      editedField: {label: "", type: "DATE", options: [], isRequired: true, isActive: true},
-
 
       fieldToDelete: {label: "", type: "DATE", options: []},
 
@@ -121,11 +118,12 @@ export default {
   },
   methods: {
     async fetchFields(){
+      this.isTableReady = false
       this.fieldsArray = null
       let url = this.apiUrl('/field')
       let params = {
         'page': this.currentPage,
-        'count': this.pageSize
+        'size': this.pageSize
       }
       url.search = new URLSearchParams(params).toString()
       let resp = await fetch( url, this.fetchInit('get') )
@@ -137,18 +135,25 @@ export default {
       this.fieldsArray = json.content;
       this.isLast = json.last;
 
+      this.isTableReady = true
     },
 
-    async saveField(field) {
-      let isNew = !this.fieldsArray.find(f => f.id === field.id)
-      let url = this.apiUrl('/field')
-      console.log(url)
-      let resp = await fetch(url, this.fetchInit('post', field))
-      let json = await resp.json()
-      if (isNew) {
-        this.fieldsArray.push(json)
+    addField(value) {
+      if(editedId !== -1) {
+        let field = this.fieldsArray.find((f) => f.id === editedId)
+        field.label = value.label
+        field.type = value.type
+        field.options = value.options
+        field.isRequired = value.isRequired
+        field.isActive = value.isActive
+
+      } else {
+        console.log(value)
+        this.fieldsArray.push(value)
       }
     }
+
+
 
   },
   computed: {

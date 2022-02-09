@@ -15,6 +15,11 @@ app.use(store)
 
 const vm = app.mount('#app')
 
+router.beforeEach((to, from, next) => {
+  document.title = to.meta.title
+  next()
+})
+/*
 router.beforeEach(function (to, from, next) {
   console.log('beforeEach', to.path + ' - Auth: ' + store.getters.isAuth)
 

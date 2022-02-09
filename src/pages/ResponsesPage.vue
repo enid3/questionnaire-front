@@ -10,6 +10,7 @@
       <DataTable
           :fields="tableFields"
           :items="responses"
+          :busy="!isTableReady"
       >
       </DataTable>
     </div>
@@ -33,13 +34,16 @@
 import PaginationFooter from "@/components/PaginationFooter";
 import DataTable from "@/components/DataTable";
 import {mapGetters} from "vuex";
+import SockJS from "sockjs-client";
+import {Stomp} from "@stomp/stompjs";
 
 export  default {
   name: "ResponsesPage",
   data() {
     return {
+      isTableReady: false,
       currentPage: 0,
-      pageSize: 0,
+      pageSize: 10,
 
       totalElements: 0,
       elementsOnPage: 0,
@@ -64,11 +68,12 @@ export  default {
     },
 
     async fetchResponses() {
+      this.isTableReady = false
       this.responses = []
       let url = this.apiUrl('/response')
       let params = {
         'page': this.currentPage,
-        'count': this.pageSize
+        'size': this.pageSize
       }
       url.search = new URLSearchParams(params).toString()
       let resp = await fetch( url, this.fetchInit('get') )
@@ -77,7 +82,12 @@ export  default {
       this.totalElements = json.totalElements;
       this.elementsOnPage = json.numberOfElements;
       json.content.forEach(r => this.responses.push(r.responses))
+      this.isTableReady = true
     },
+    addResponseToTable(response){
+      console.log("adding " + response + " to tabl3")
+     this.responses.push(response.responses)
+    }
   },
   watch: {
     currentPage: function (val, oldVal) {
@@ -88,6 +98,14 @@ export  default {
   mounted() {
     this.fetchLabels()
     this.fetchResponses()
+
+    const url = 'http://localhost:8080/responses';
+    const socket = new SockJS(url)
+    const client = Stomp.over(socket);
+    client.connect({}, (frame) => {
+      client.subscribe("/topic/responses",
+          (val) => {this.addResponseToTable(JSON.parse(val.body));})
+    })
   },
 
   components: {PaginationFooter, DataTable}

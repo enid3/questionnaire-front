@@ -1,6 +1,6 @@
 <template>
   <select class="form-select" v-model="pageSize">
-    <option value="0" >All</option>
+    <option :value="99999999" >All</option>
     <option
         v-for="size in sizes"
         :key="size"
