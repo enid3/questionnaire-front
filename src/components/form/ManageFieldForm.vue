@@ -1,32 +1,36 @@
 <template>
   <BForm
-      v-slot="{values}"
       @submit="onSaveField"
+      :validation-schema="schema"
+      :error="error"
+      :is-action-completed="isActionCompleted"
+      :initial-values="field"
+
   >
-    {{values}}
-    <div class="container-sm">
+    <template #fields="{values}">
+      <div class="container-sm p-0">
         <BFormGroup
             class="row justify-content-sm-start"
             label="Label"
-            label-cols="2"
+            label-cols="3"
         >
-          <div class='col-10'>
+          <div class='col-9'>
             <BFormInput
                 name="label"
             />
             <BInvalidFeedback name="label"/>
-
           </div>
         </BFormGroup>
 
       <BFormGroup
           class="row justify-content-sm-start"
           label="Type"
-          label-cols="2"
+          label-cols="3"
       >
-        <div class='col-10'>
+        <div class='col-9'>
           <BFormSelect
               name="type"
+              v-model="type"
               :options="fieldOptions"
           />
           <BInvalidFeedback name="type"/>
@@ -36,16 +40,13 @@
       <BFormGroup
           class="row justify-content-sm-start"
           label="Options"
-          label-cols="2"
+          label-cols="3"
       >
-        <div class="col-10">
-          <Field name="options" v-slot="{field}">
-            <OptionsInput
-                v-bind="field"
-                v-model="options"
-                :disabled="!isOptionsAvailable(values.type)"
-            />
-          </Field>
+        <div class="col-9">
+          <OptionsInput
+              name="options"
+              :disabled="!isOptionsAvailable(values.type)"
+          />
           <BInvalidFeedback name="options"/>
         </div>
 
@@ -64,11 +65,15 @@
           </BFormCheckbox>
         </div>
       </div>
-      <div class="d-flex border-top justify-content-end align-items-center ">
-        <button type="button" class="btn btn-secondary me-1 mt-2" data-bs-dismiss="modal">Cancel</button>
-        <BSubmit data-bs-dismiss="modal" class="btn btn-primary  ms-1 me-1 mt-2">Save</BSubmit>
       </div>
-    </div>
+    </template>
+
+    <template #controls>
+      <div class="d-flex justify-content-end align-items-center ">
+        <BSubmit class="btn btn-primary  ms-1 me-1 mt-2">Save</BSubmit>
+      </div>
+    </template>
+
   </BForm>
 </template>
 
@@ -83,18 +88,41 @@ import BFormSelect from "@/components/form/base/BFormSelect";
 import BFormCheckbox from "@/components/form/base/BFormCheckbox";
 import {Field} from "vee-validate";
 import BSubmit from "@/components/form/base/BSubmit";
-import {mapGetters} from "vuex";
+import {mapActions, mapGetters} from "vuex";
+import * as yup from "yup";
+import ServerSideError from "@/components/util/ServerSideError";
+
+function fieldCountPerType(type) {
+  console.log("checking for: " + type)
+  let val = 0
+  switch (type){
+    case 'RADIO_BUTTON':
+    case 'COMBOBOX':
+      val = 2;
+      break;
+    case 'CHECKBOX':
+      val = 1;
+      break;
+    default:
+      val = 0;
+  }
+  return val
+}
 
 export default {
   name: "ManageFieldForm",
-  components: {BSubmit, BFormCheckbox, BFormSelect, OptionsInput, BForm, BFormInput, BFormGroup, BInvalidFeedback, Field, },
   props: {
-    editedId: Number,
+    field: {
+      type: Object,
+      required: true
+    }
   },
   data() {
     return {
       fieldTypes,
-      options: []
+      type: "",
+      error: "",
+      isActionCompleted: false
     }
   },
   computed: {
@@ -105,34 +133,57 @@ export default {
         opt.push({text: fieldTypes[key], value: key})
       }
       return  opt
+    },
+    schema() {
+      return {
+        label: yup.string().required().min(2).max(20),
+        type: yup.string().required(),
+        options: (val) => {
+          let requiredParamsCount = fieldCountPerType(this.type)
+
+          if (val.length < requiredParamsCount){
+            return "Required at least " + requiredParamsCount + " options";
+          }
+
+          return true;
+        }
+      }
+
     }
   },
   methods: {
+    ...mapActions(['createField', 'updateField']),
     async onSaveField(value, {resetForm}) {
-      let field = Object.assign({}, value)
-      if(field.options && typeof field.options === 'string'){
-        field.options = field.options.split('\n')
-      }
-      console.log('id: ' + this.editedId)
-      let method = 'post'
-      let url = this.apiUrl('/field')
-      if(this.editedId !== -1) {
-        method = 'put'
-        url = this.apiUrl('/field' + '/' + this.editedId)
-        field.id = this.editedId
+      this.isActionCompleted = false;
+
+      let f = Object.assign({}, this.field, value);
+      if(f.options && typeof f.options === 'string'){
+        f.options = f.options.split('\n');
       }
 
-      let resp = await fetch(url, this.fetchInit(method, field))
-      let json = await resp.json()
-      let newField = json
-
-      resetForm();
-      this.$emit('submit', newField)
+      this.error = "";
+      try {
+        let newField;
+        console.log(f)
+        if(f.id){
+          newField = await this.updateField(f);
+        } else {
+          newField = await this.createField(f);
+        }
+        resetForm();
+        this.isActionCompleted = false;
+        this.$emit('submit', newField);
+      }
+      catch (resp) {
+        let json = await resp.json()
+        this.error = json.message
+      }
     },
     isOptionsAvailable(val) {
       return ['RADIO_BUTTON', 'CHECKBOX', 'COMBOBOX'].includes(val)
     },
   },
-  emits: ['submit']
+  emits: ['submit'],
+  components: {BSubmit, BFormCheckbox, BFormSelect, OptionsInput, BForm, BFormInput, BFormGroup, BInvalidFeedback, Field, ServerSideError},
 }
 </script>

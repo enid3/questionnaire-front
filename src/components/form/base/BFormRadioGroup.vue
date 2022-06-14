@@ -1,21 +1,24 @@
 <template>
-<div>
-  <template v-for="option in options">
-    <div class="form-check">
-      <Field
-          :name="name"
-          type="radio"
-          :value="option"
-      />
-      {{ option }}
-    </div>
-  </template>
-</div>
+<BFormGroupLayout>
+  <div
+      class="form-check col-6"
+      v-for="option in options"
+      :key="option"
+  >
+    <Field
+        :name="name"
+        type="radio"
+        :value="option"
+    />
+    {{ option }}
+  </div>
+</BFormGroupLayout>
 </template>
 
 <script>
 import BFormRadio from "@/components/form/base/BFormRadio";
 import {Field} from "vee-validate";
+import BFormGroupLayout from "@/components/layouts/BFormGroupLayout";
 
 export default {
   name: "BFormRadioGroup",
@@ -30,6 +33,6 @@ export default {
       set(val) { return this.$emit('update:modelValue', val) }
     }
   },
-  components: { BFormRadio, Field },
+  components: {BFormGroupLayout, BFormRadio, Field },
 }
 </script>

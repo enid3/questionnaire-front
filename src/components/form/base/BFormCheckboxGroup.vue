@@ -1,21 +1,23 @@
 <template>
-<div>
-  <template v-for="option in options">
-    <div class="form-check">
-      <Field
-          :name="name"
-          type="checkbox"
-          :value="option"
-      />
-      {{ option }}
-    </div>
-  </template>
-</div>
+<BFormGroupLayout>
+  <div
+     class="form-check col-6"
+     v-for="option in options"
+  >
+    <Field
+        :name="name"
+        type="checkbox"
+        :value="option"
+    />
+    {{ option }}
+  </div>
+</BFormGroupLayout>
 </template>
 
 <script>
 import BFormCheckbox from "@/components/form/base/BFormCheckbox";
 import {Field} from "vee-validate";
+import BFormGroupLayout from "@/components/layouts/BFormGroupLayout";
 
 function generateOptionsHolder(options) {
   let obj = {}
@@ -42,6 +44,6 @@ export default {
           Object.keys(this.valuesHolder).filter(key => this.valuesHolder[key]).join(' '))
     }
   },
-  components: { BFormCheckbox, Field },
+  components: {BFormGroupLayout, BFormCheckbox, Field },
 }
 </script>

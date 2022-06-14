@@ -4,11 +4,13 @@ import router from "@/router";
 export default {
   state: () => {
     return {
-      baseApiUrl: 'http://localhost:8080/api/v1',
+      baseApiUrl: 'http://127.0.0.1:8080/api/v1',
+      // baseApiUrl: 'https://questionnaire-f.herokuapp.com/api/v1',
       baseHeaders: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
+      rememberMe: true,
       authTokenKey: 'authToken',
       authToken: '',
 
@@ -25,27 +27,27 @@ export default {
     updateToken(state, newToken) {
       if (newToken) {
         state.authToken = newToken;
-        localStorage.setItem(state.authTokenKey, state.authToken)
+        if(state.rememberMe) {
+          localStorage.setItem(state.authTokenKey, state.authToken);
+        }
       } else {
         state.authToken = '';
-        localStorage.removeItem(state.authTokenKey)
+        localStorage.removeItem(state.authTokenKey);
       }
     },
+    updateRememberMe(state, val) {
+      state.rememberMe = val;
+    },
     updateUser(state, user) {
-      console.log('updating user: to' + user)
-      console.log(user)
-      console.log('updating user: from')
-      console.log(state.user)
       for(let prop in user){
         if(user[prop]) {
           state.user[prop] = user[prop]
         }
       }
-      console.log(state.user)
-      console.log(JSON.stringify(state.user))
 
-
-      localStorage.setItem(state.userKey, JSON.stringify(state.user));
+      if(state.rememberMe) {
+        localStorage.setItem(state.userKey, JSON.stringify(state.user));
+      }
     },
     initialiseState(state) {
       state.authToken = localStorage.getItem(state.authTokenKey);
@@ -61,7 +63,7 @@ export default {
       if(state.user)
         localStorage.setItem(state.userKey, JSON.stringify(state.user));
     },
-    clearUser({state, commit}) {
+    clearUser(state) {
       state.user = {
           email: null,
           firstName: null,
@@ -69,66 +71,88 @@ export default {
           phoneNumber: null,
       }
       localStorage.setItem(state.userKey, JSON.stringify(state.user));
-    }
-
+    },
   },
 
   actions: {
-    async login({commit, getters, state}, {email, password}) {
+    async clearAuth({commit}) {
+      commit('updateToken', '')
+      commit('clearUser')
+      await router.push('/')
+    },
+    async login({commit, getters, state}, {email, password, rememberMe}) {
+      commit('updateRememberMe', rememberMe);
       const resp = await fetch(
         getters.apiUrl('/auth/signin'),
         getters.fetchInit('post', {"email": email, "password": password})
       )
       const json = await resp.json()
-      commit('updateToken', json.token)
-      console.log(json['user'])
-      commit('updateUser', json['user'])
+      console.log(json)
+      if(resp.ok) {
+        commit('updateToken', json.token)
+        console.log(json['user'])
+        commit('updateUser', json['user'])
+        return ''
+      } else {
+        return json.message
+      }
     },
     async register({commit, getters}, user) {
       const resp = await fetch(
         getters.apiUrl('/auth/register'),
         getters.fetchInit('post', user)
       )
+      const json = await resp.json()
       if(resp.ok){
-        const json = await resp.json()
-
         commit('updateToken', json.token)
         commit('updateUser', json['user'])
-        return true
+        return ''
       } else {
-        return false
+        return json.message
       }
     },
-    async editProfile({commit, getters, state}, user){
+    async editProfile({commit, getters, state, dispatch}, user) {
       const resp = await fetch(
         getters.apiUrl('/user'),
         getters.fetchInit('put', user)
       )
-      const json = await resp.json()
-      console.log(json)
-
-      commit('updateUser', user)
+      console.log(resp.status)
+      if(resp.status !== 401)  {
+        const json = await resp.json()
+        if(resp.ok) {
+          commit('updateUser', user)
+          return ''
+        } else {
+          return json.message
+        }
+      } else {
+          dispatch('clearAuth')
+          return "Auth token expired"
+        }
     },
-
-    async changePassword({commit, getters, state}, {oldPassword, newPassword}){
+    async changePassword({commit, getters, state, dispatch}, {oldPassword, newPassword}){
       console.log(oldPassword)
       console.log(newPassword)
       const resp = await fetch(
         getters.apiUrl('/user/changePassword'),
         getters.fetchInit('post', {oldPassword, newPassword})
       )
-      const json = await resp.json()
+      if(resp.status !== 401)  {
+        const json = await resp.json()
+        if(resp.ok) {
+          return ''
+        } else {
+          return json.message
+        }
+      } else {
+        dispatch('clearAuth')
+        return "Auth token expired"
+      }
+  },
 
-      console.log(json)
-
-      //commit('changePassword', user)
-
-    },
-
-    async logout({commit, state}) {
-      commit('updateToken', '')
-      commit('clearUser')
-      await router.push('/')
+    async logout({commit, state, dispatch}) {
+      dispatch('clearAuth')
+      await router.push('/login')
     }
 
   },

@@ -1,8 +1,10 @@
 <template>
 <BForm
     @submit="onSubmitProfileChanges"
+    @invalid-submit="onSubmitInvalid"
     :initialValues="user"
     :validation-schema="getSchema(fields)"
+    :busy="isActionInProcess"
 >
   <BFormGroup label="First name">
     <BFormInput
@@ -39,6 +41,12 @@
   <div class="mt-3">
     <BSubmit class="col-4">SAVE</BSubmit>
   </div>
+  <ActionCompletedSuccessfully class="m-2" :ok="isActionCompleted">
+  </ActionCompletedSuccessfully>
+  <ServerSideError
+      class="m-2"
+    :error="error"
+    />
 </BForm>
 </template>
 
@@ -49,11 +57,16 @@ import {mapActions, mapGetters} from "vuex";
 import BSubmit from "@/components/form/base/BSubmit";
 import BInvalidFeedback from "@/components/form/base/BInvalidFeedback";
 import BForm from "@/components/form/base/BForm";
+import ServerSideError from "@/components/util/ServerSideError";
+import ActionCompletedSuccessfully from "@/components/ActionCompletedSuccesfully";
 export default {
   name: 'EditProfileForm',
   data() {
     return {
-      fields:  [ "email", "firstName", "lastName", "phoneNumber", ]
+      fields:  [ "email", "firstName", "lastName", "phoneNumber", ],
+      error: '',
+      isActionInProcess: false,
+      isActionCompleted: false
     }
   },
   computed: {
@@ -62,9 +75,22 @@ export default {
   methods: {
     ...mapActions(['editProfile']),
     onSubmitProfileChanges(value) {
-      this.editProfile(value)
+      this.isActionCompleted = false;
+      this.isActionInProcess = true;
+      let error = this.editProfile(value)
+      error.then( val => {
+        console.log(val);
+        this.error = val;
+        if (!this.error) {
+          this.isActionCompleted = true;
+        }
+        this.isActionInProcess = false;
+      } )
+    },
+    onSubmitInvalid(value) {
+      this.isActionCompleted = false;
     },
   },
-  components: {BFormInput, BFormGroup, BSubmit, BInvalidFeedback, BForm },
+  components: {ActionCompletedSuccessfully, ServerSideError, BFormInput, BFormGroup, BSubmit, BInvalidFeedback, BForm },
 }
 </script>

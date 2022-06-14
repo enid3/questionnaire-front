@@ -1,5 +1,5 @@
 <template>
-  <div class="row">
+  <div class="row" :class="{'disabled-div': totalPages <=0}">
     <div class="col-auto me-auto mb-auto mt-auto">
       <PageRepresentationStatus
           :current-page="currentPage"
@@ -26,9 +26,9 @@
   </div>
 </template>
 <script>
-import PageRepresentationStatus from "@/components/PageRepresentationStatus";
-import PageSizeSelector from "@/components/PageSizeSelector";
-import Pagination from "@/components/Pagination";
+import PageRepresentationStatus from "@/components/util/table/PageRepresentationStatus";
+import PageSizeSelector from "@/components/util/table/PageSizeSelector";
+import Pagination from "@/components/util/table/Pagination";
 
 export default {
   name: "PaginationFooter",
@@ -44,11 +44,9 @@ export default {
   },
   methods: {
     onPageSizeUpdated(e) {
-      console.log('before emmiting currentPage')
       this.$emit('update:pageSize', e)
     },
     onCurrentPageUpdated(e){
-      console.log('before emmiting pagintaion')
       this.$emit('update:currentPage', e)
     }
 
@@ -57,3 +55,10 @@ export default {
   components: { PageRepresentationStatus, PageSizeSelector, Pagination }
 }
 </script>
+
+<style scoped>
+.disabled-div {
+  pointer-events: none;
+  opacity: 0.4;
+}
+</style>

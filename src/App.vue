@@ -1,27 +1,27 @@
 <template>
-  <header class="bg-white">
+  <header class="bg-white border-bottom">
     <navigation-header></navigation-header>
   </header>
   <main>
-    <div class="container-fluid pt-5 justify-content-center">
-      <router-view/>
-    </div>
+    <router-view></router-view>
+    <b-toast-container :toasts="notifications"></b-toast-container>
   </main>
 </template>
 
 <script>
 
 import NavigationHeader from "@/components/NavigationHeader";
-import router from "@/router";
-import auth from "@/store/modules/auth";
+import BToastContainer from "@/components/util/BToastContainer";
+import {mapActions, mapGetters} from "vuex";
 export default {
   name: 'App',
   data() {
    return {
-     authToken: String
+     authToken: String,
    }
   },
-  components: {NavigationHeader},
+  methods: mapActions(['createNotification']),
+  computed: mapGetters(['notifications']),
   beforeCreate() {
     this.$store.commit('initialiseState');
     /*
@@ -38,7 +38,8 @@ export default {
   },
   unmounted() {
     this.$store.commit('saveState');
-  }
+  },
+  components: {BToastContainer, NavigationHeader},
 }
 </script>
 

@@ -1,16 +1,32 @@
 <template>
+<Field
+    v-slot="{field, meta}"
+    v-model="value"
+>
   <textarea
+      :class="{'is-invalid': meta.touched & !meta.valid}"
       class="form-control"
+      :placeholder="placeholder"
+      v-bind="field"
       :rows="rows"
-      v-model="value"></textarea>
+      >
+  </textarea>
+</Field>
 </template>
 
 <script>
+
+import {Field} from "vee-validate";
+
 export default {
   name: "BFormTextArea",
   props: {
     modelValue: String,
-    rows: 3,
+    rows: {
+      type: Number,
+      default:3
+    },
+    placeholder: String
   },
   computed: {
     value: {
@@ -18,6 +34,7 @@ export default {
       set(val) { this.$emit('update:modelValue', val) }
     }
   },
+  components: {Field},
   emits: ['update:modelValue']
 }
 </script>

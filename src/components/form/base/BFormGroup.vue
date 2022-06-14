@@ -7,6 +7,7 @@
         :for="labelFor"
     >
       <span class="text-secondary" >{{ label }}</span>
+      <span class="text-danger">{{isRequired?'*':''}}</span>
     </label>
     <slot></slot>
   </div>
@@ -18,8 +19,20 @@ export default {
   props: {
     label: String,
     labelFor: String,
-    labelCols: String
+    labelCols: String,
+    isRequired: {
+      type: Boolean,
+      required: false,
+      default: false
+    }
     //description: String,
   }
 }
 </script>
+
+<style >
+input[required]+label:after {
+  content: '*';
+  color: red;
+}
+</style>

@@ -22,9 +22,10 @@
 import Logotype from "@/components/Logotype";
 import LoginForm from "@/components/form/LoginForm";
 import DataInputPageLayout from "@/components/layouts/DataInputPageLayout";
+import ServerSideError from "@/components/util/ServerSideError";
 
 export default {
   name: "LoginPage",
-  components: {DataInputPageLayout, Logotype, LoginForm},
+  components: {ServerSideError, DataInputPageLayout, Logotype, LoginForm},
 }
 </script>

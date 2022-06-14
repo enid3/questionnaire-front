@@ -2,6 +2,7 @@
 <BForm
     @submit="onLogin"
     :validation-schema="getSchema(fields)"
+    :busy="isActionInProcess"
 >
   <BFormGroup >
     <BFormInput
@@ -25,16 +26,23 @@
     <BFormGroup class="col-auto me-auto">
       <BFormCheckbox
           name="rememberMe"
+          :model-value='true'
        >
         Remember me
       </BFormCheckbox>
     </BFormGroup>
     <div class="col-auto">
-      <span class="text-primary">Forgot your password?</span>
+      <del><span class="text-primary">Forgot your password?</span></del>
     </div>
     <div class="d-flex">
       <BSubmit class="flex-fill">LOG IN</BSubmit>
     </div>
+
+    <server-side-error
+        class="m-2"
+        :error="error"
+    >
+    </server-side-error>
   </div>
 </BForm>
 </template>
@@ -47,23 +55,34 @@ import BForm from "@/components/form/base/BForm";
 import BSubmit from "@/components/form/base/BSubmit";
 import BInvalidFeedback from "@/components/form/base/BInvalidFeedback";
 import {mapActions, mapGetters} from "vuex";
+import ServerSideError from "@/components/util/ServerSideError";
 
 export default {
   name: 'LoginForm',
   data() {
     return {
-      fields: ['email', 'password']
+      fields: ['email', 'password'],
+      error:  "",
+      isActionInProcess: false,
     }
   },
   methods: {
     ...mapActions(['login']),
     onLogin(value) {
-      if (this.login({email: value.email, password: value.password})) {
-        this.$router.push('/')
-      }
+      this.isActionInProcess = true;
+      this.error=""
+      let error = this.login({email: value.email, password: value.password, rememberMe: value.rememberMe})
+      error.then( val => {
+        console.log(val);
+        this.error = val;
+        if (!this.error) {
+          this.$router.push('/')
+        }
+        this.isActionInProcess = false;
+      } )
     },
   },
   computed: mapGetters(['getSchema']),
-  components: {BSubmit, BForm, BFormCheckbox, BFormInput, BFormGroup, BInvalidFeedback}
+  components: {BSubmit, BForm, BFormCheckbox, BFormInput, BFormGroup, BInvalidFeedback, ServerSideError}
 }
 </script>

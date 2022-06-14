@@ -2,61 +2,69 @@
 <BForm
     @submit="onRegister"
     :validation-schema="getSchema(fields)"
+    :is-action-completed="isActionCompleted"
 >
-  <BFormGroup>
-    <BFormInput
-        name="email"
-        type="email"
-        placeholder="Email"
+  <template #fields>
+    <BFormGroup>
+      <BFormInput
+          name="email"
+          type="email"
+          placeholder="Email"
       />
-    <BInvalidFeedback name="email"/>
-  </BFormGroup>
+      <BInvalidFeedback name="email"/>
+    </BFormGroup>
 
-  <BFormGroup>
-    <BFormInput
-        name="password"
-        type="password"
-        placeholder="Password"
-    />
-    <BInvalidFeedback name="password"/>
-  </BFormGroup>
+    <BFormGroup>
+      <BFormInput
+          name="password"
+          type="password"
+          placeholder="Password"
+      />
+      <BInvalidFeedback name="password"/>
+    </BFormGroup>
 
-  <BFormGroup>
-    <BFormInput
-        name="confirmPassword"
-        type="password"
-        placeholder="Confirm Password"
-    />
-    <BInvalidFeedback name="confirmPassword"/>
-  </BFormGroup>
+    <BFormGroup>
+      <BFormInput
+          name="confirmPassword"
+          type="password"
+          placeholder="Confirm Password"
+      />
+      <BInvalidFeedback name="confirmPassword"/>
+    </BFormGroup>
 
-  <BFormGroup>
-    <BFormInput
-        name="firstName"
-        placeholder="First name"
-    />
-    <BInvalidFeedback name="firstName"/>
-  </BFormGroup>
+    <div class="row m-0">
+      <BFormGroup class="col p-0 m-0">
+        <BFormInput
+            name="firstName"
+            placeholder="First name"
+        />
+        <BInvalidFeedback name="firstName"/>
+      </BFormGroup>
 
-  <BFormGroup>
-    <BFormInput
-        name="lastName"
-        placeholder="Last name"
-    />
-    <BInvalidFeedback name="lastName"/>
-  </BFormGroup>
+      <BFormGroup class="col p-0 m-0">
 
-  <BFormGroup>
-    <BFormInput
-        name="phoneNumber"
-        placeholder="Phone Number"
-    />
-    <BInvalidFeedback name="phoneNumber"/>
-  </BFormGroup>
+        <BFormInput
+            name="lastName"
+            placeholder="Last name"
+        />
+        <BInvalidFeedback name="lastName"/>
+      </BFormGroup>
+    </div>
 
-  <div class="d-flex mt-3">
-    <BSubmit class="flex-fill">SING UP</BSubmit>
-  </div>
+    <BFormGroup>
+      <BFormInput
+          name="phoneNumber"
+          placeholder="Phone Number"
+      />
+      <BInvalidFeedback name="phoneNumber"/>
+    </BFormGroup>
+  </template>
+
+  <template #controls>
+    <div class="d-flex mt-3">
+      <BSubmit class="flex-fill">SING UP</BSubmit>
+    </div>
+  </template>
 </BForm>
 </template>
 
@@ -67,6 +75,7 @@ import BInvalidFeedback from "@/components/form/base/BInvalidFeedback";
 import BForm from "@/components/form/base/BForm";
 import {mapActions, mapGetters} from "vuex";
 import BSubmit from "@/components/form/base/BSubmit";
+import ServerSideError from "@/components/util/ServerSideError";
 
 export default {
   name: 'RegistrationForm',
@@ -76,11 +85,15 @@ export default {
          "email", "password", 'confirmPassword',
         "firstName", "lastName", "phoneNumber"
       ],
+      error: "",
+      isActionCompleted: false
     }
   },
   methods: {
     ...mapActions(['register']),
     onRegister(value) {
+      this.isActionCompleted = false;
+      this.error=""
       let user = {
         email: value.email,
         password: value.password,
@@ -89,13 +102,19 @@ export default {
         phoneNumber: value.phoneNumber,
       }
 
-      if(this.register(Object.assign({}, user))) {
-        this.$router.push('/')
-      }
+      let error = this.register(Object.assign({}, user));
+      this.isActionCompleted = true;
+      error.then( val => {
+        console.log(val);
+        this.error = val;
+        if (!this.error) {
+          this.$router.push('/')
+        }
+      } );
     }
   },
   computed: mapGetters(['getSchema']),
-  components: {BSubmit, BForm, BFormGroup, BFormInput, BInvalidFeedback },
+  components: {BSubmit, BForm, BFormGroup, BFormInput, BInvalidFeedback, ServerSideError },
 }
 
 </script>
